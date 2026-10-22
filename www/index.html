@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#080d18">
+<title>JARVIS Organizador</title>
+<style>
+:root{--bg:#080d18;--panel:#101a2b;--blue:#29baff;--text:#edf6ff;--muted:#8b9bb2;--border:#22334b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{padding:22px 18px 16px;background:linear-gradient(135deg,#101f37,#080d18);border-bottom:1px solid var(--border)}
+.brand{color:var(--blue);font-size:12px;letter-spacing:4px}
+h1{font-size:27px;margin:8px 0}
+header p,.muted{color:var(--muted);font-size:13px}
+main{padding:17px;max-width:700px;margin:auto;padding-bottom:95px}
+h2{font-size:18px;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:15px;margin-bottom:12px}
+.stat{font-size:23px;color:var(--blue);font-weight:bold;margin-top:8px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:#0b1220;border-top:1px solid var(--border);padding:12px 3px calc(12px + env(safe-area-inset-bottom));z-index:5}
+nav button{background:none;border:0;color:var(--muted);font-size:11px;padding:5px}
+nav button.active{color:var(--blue)}
+button,.btn{cursor:pointer}
+.primary{background:var(--blue);color:#04111c;border:0;border-radius:9px;padding:12px 15px;font-weight:bold}
+input,select,textarea{width:100%;background:#09111e;border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);margin:6px 0 12px;font-size:14px}
+label{font-size:12px;color:var(--muted)}
+.task{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+.task:last-child{border-bottom:0}
+.task input{width:19px;margin:0;accent-color:var(--blue)}
+.task span{flex:1;overflow-wrap:anywhere}
+.done{text-decoration:line-through;color:var(--muted)}
+.delete{background:none;color:#ff8292;border:0;font-size:18px}
+.section{display:none}.section.active{display:block}
+.pill{font-size:11px;color:var(--blue);background:#142d43;padding:5px 8px;border-radius:20px}
+.empty{color:var(--muted);font-size:13px;padding:12px 0}
+</style>
+</head>
+<body>
+<header>
+<div class="brand">J.A.R.V.I.S. / SISTEMA PESSOAL</div>
+<h1>Olá, comandante.</h1>
+<p id="today"></p>
+<p>● Sistema operacional · Dados salvos neste aparelho</p>
+</header>
+
+<main>
+<section class="section active" id="home">
+<h2>Painel de controle</h2>
+<div class="stats">
+<div class="card"><div class="muted">Tarefas pendentes</div><div class="stat" id="pending">0</div></div>
+<div class="card"><div class="muted">Tarefas concluídas</div><div class="stat" id="completed">0</div></div>
+<div class="card"><div class="muted">Hábitos de hoje</div><div class="stat" id="habitCount">0/0</div></div>
+<div class="card"><div class="muted">Saldo registrado</div><div class="stat" id="balance">R$ 0,00</div></div>
+</div>
+<div class="card"><h2>Adicionar tarefa</h2>
+<form id="taskForm">
+<label>O que precisa fazer?</label><input id="taskName" placeholder="Ex.: estudar matemática" required maxlength="120">
+<label>Categoria</label><select id="taskCategory"><option>Rotina</option><option>Estudos</option><option>Trabalho</option><option>Lazer</option></select>
+<label>Prioridade</label><select id="taskPriority"><option>Normal</option><option>Alta</option><option>Urgente</option></select>
+<button class="primary" type="submit">+ Adicionar tarefa</button>
+</form></div>
+<h2>Próximas tarefas</h2><div class="card" id="homeTasks"></div>
+</section>
+
+<section class="section" id="tasks">
+<h2>Minhas tarefas</h2>
+<div class="card"><label>Filtrar categoria</label><select id="filter"><option>Todas</option><option>Rotina</option><option>Estudos</option><option>Trabalho</option><option>Lazer</option></select></div>
+<div class="card" id="allTasks"></div>
+</section>
+
+<section class="section" id="habits">
+<h2>Hábitos diários</h2>
+<div class="card"><form id="habitForm"><label>Novo hábito</label><input id="habitName" placeholder="Ex.: ler 15 minutos" required maxlength="80"><button class="primary">+ Criar hábito</button></form></div>
+<div class="card" id="habitList"></div>
+<p class="muted">Os hábitos marcados são reiniciados a cada novo dia.</p>
+</section>
+
+<section class="section" id="money">
+<h2>Controle financeiro</h2>
+<div class="card"><div class="muted">Saldo atual registrado</div><div class="stat" id="moneyBalance">R$ 0,00</div></div>
+<div class="card"><form id="moneyForm"><label>Descrição</label><input id="moneyName" placeholder="Ex.: mesada" required maxlength="80"><label>Valor (R$)</label><input id="moneyValue" type="number" min="0.01" step="0.01" placeholder="0,00" required><label>Tipo</label><select id="moneyType"><option value="in">Entrada</option><option value="out">Saída</option></select><button class="primary">Registrar movimentação</button></form></div>
+<h2>Histórico</h2><div class="card" id="moneyList"></div>
+</section>
+
+<section class="section" id="focus">
+<h2>Estudos e trabalho</h2>
+<div class="card"><p class="muted">Organize suas tarefas por categoria e acompanhe o que já foi concluído.</p><button class="primary" onclick="show('tasks');document.getElementById('filter').value='Estudos';render()">Ver tarefas de estudo</button><p></p><button class="primary" onclick="show('tasks');document.getElementById('filter').value='Trabalho';render()">Ver tarefas de trabalho</button></div>
+</section>
+</main>
+
+<nav>
+<button class="active" data-page="home" onclick="show('home')">⌂<br>Início</button>
+<button data-page="tasks" onclick="show('tasks')">☷<br>Tarefas</button>
+<button data-page="habits" onclick="show('habits')">✓<br>Hábitos</button>
+<button data-page="money" onclick="show('money')">R$<br>Dinheiro</button>
+<button data-page="focus" onclick="show('focus')">◇<br>Estudos</button>
+</nav>
+
+<script>
+const load=(key,def)=>{try{return JSON.parse(localStorage.getItem(key))??def}catch{return def}};
+let tasks=load('jarvis_tasks',[]);
+let habits=load('jarvis_habits',[]);
+let money=load('jarvis_money',[]);
+let day=new Date().toLocaleDateString('sv-SE');
+function save(){localStorage.setItem('jarvis_tasks',JSON.stringify(tasks));localStorage.setItem('jarvis_habits',JSON.stringify(habits));localStorage.setItem('jarvis_money',JSON.stringify(money));render()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function show(id){document.querySelectorAll('.section').forEach(e=>e.classList.toggle('active',e.id===id));document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===id));render()}
+function taskHTML(t){return `<div class="task"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}')"><span class="${t.done?'done':''}">${esc(t.name)}<br><small class="muted">${esc(t.category)} · ${esc(t.priority)}</small></span><button class="delete" onclick="delTask('${t.id}')">×</button></div>`}
+function toggleTask(id){tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);save()}
+function delTask(id){tasks=tasks.filter(t=>t.id!==id);save()}
+document.getElementById('taskForm').addEventListener('submit',e=>{e.preventDefault();tasks.unshift({id:crypto.randomUUID(),name:taskName.value.trim(),category:taskCategory.value,priority:taskPriority.value,done:false});taskName.value='';save()});
+filter.addEventListener('change',render);
+document.getElementById('habitForm').addEventListener('submit',e=>{e.preventDefault();habits.push({id:crypto.randomUUID(),name:habitName.value.trim(),days:day,done:false});habitName.value='';save()});
+function toggleHabit(id){habits=habits.map(h=>h.id===id?{...h,done:!h.done,days:day}:h);save()}
+function delHabit(id){habits=habits.filter(h=>h.id!==id);save()}
+document.getElementById('moneyForm').addEventListener('submit',e=>{e.preventDefault();money.unshift({id:crypto.randomUUID(),name:moneyName.value.trim(),value:Number(moneyValue.value),type:moneyType.value,date:new Date().toLocaleDateString('pt-BR')});moneyName.value='';moneyValue.value='';save()});
+function delMoney(id){money=money.filter(m=>m.id!==id);save()}
+const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function render(){
+let pend=tasks.filter(t=>!t.done).length,done=tasks.filter(t=>t.done).length;
+pending.textContent=pend;completed.textContent=done;
+let todays=habits.filter(h=>h.days===day);habitCount.textContent=todays.filter(h=>h.done).length+'/'+habits.length;
+let bal=money.reduce((s,m)=>s+(m.type==='in'?m.value:-m.value),0);
+balance.textContent=brl(bal);moneyBalance.textContent=brl(bal);
+let list=tasks.filter(t=>filter.value==='Todas'||t.category===filter.value);
+allTasks.innerHTML=list.length?list.map(taskHTML).join(''):'<div class="empty">Nenhuma tarefa aqui.</div>';
+homeTasks.innerHTML=tasks.filter(t=>!t.done).slice(0,5).map(taskHTML).join('')||'<div class="empty">Tudo em dia. Adicione uma tarefa quando precisar.</div>';
+habitList.innerHTML=habits.map(h=>`<div class="task"><input type="checkbox" ${h.days===day&&h.done?'checked':''} onchange="toggleHabit('${h.id}')"><span>${esc(h.name)}</span><button class="delete" onclick="delHabit('${h.id}')">×</button></div>`).join('')||'<div class="empty">Crie seu primeiro hábito.</div>';
+moneyList.innerHTML=money.map(m=>`<div class="task"><span>${esc(m.name)}<br><small class="muted">${m.date} · ${m.type==='in'?'Entrada':'Saída'}</small></span><b style="color:${m.type==='in'?'#45dfad':'#ff8292'}">${m.type==='in'?'+':'−'}${brl(m.value)}</b><button class="delete" onclick="delMoney('${m.id}')">×</button></div>`).join('')||'<div class="empty">Nenhuma movimentação registrada.</div>';
+}
+document.getElementById('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+if(day!==localStorage.getItem('jarvis_day')){habits=habits.map(h=>({...h,done:false,days:day}));localStorage.setItem('jarvis_day',day);localStorage.setItem('jarvis_habits',JSON.stringify(habits))}
+render();
+</script>
+</body>
+                                                                                                                                         </html>
